@@ -1,29 +1,35 @@
 package com.example.android.childtracker.ui.viewmodel
 
-import android.widget.Toast
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.android.childtracker.data.entities.Parent
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import kotlinx.android.synthetic.main.activity_main.*
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class ParentViewModel : ViewModel() {
 
-    private var auth: FirebaseAuth = FirebaseAuth.getInstance()
+    @Inject
+    private lateinit var auth: FirebaseAuth
 
     private val _currentUserLogged = MutableLiveData<Boolean>()
     val currentUserLogged: LiveData<Boolean>
         get() = _currentUserLogged
 
-    private val personCollectionRef = Firebase.firestore.collection("parents")
-    private val childCollectionRef = Firebase.firestore.collection("children")
+    @Inject
+    private lateinit var personCollectionRef :CollectionReference
+
+    @Inject
+    private lateinit var childCollectionRef :CollectionReference
 
     lateinit var currentUser: FirebaseUser
 

@@ -1,3 +1,16 @@
 <resources>
     <string name="app_name">ChildTracker</string>
+    <string name="mapbox_access_token">pk.eyJ1IjoidmFkaW1iZXMiLCJhIjoiY2tocnNvY3BuMGRkdDJxbGhzNXFqbTZqdiJ9.Yk_bFWcZ1zbkEvqSdUof5g</string>
+    <string name="toggle_straight_line_drawing">Toggle drawing single line only</string>
+    <string name="clear_map">Clear map for new draw</string>
+    <string name="toggle_search_data_points_title">Toggle searchable data</string>
+    <string name="now_drawing">Now drawing %1$s</string>
+    <string name="single_line">single line</string>
+    <string name="polygon">polygon</string>
+    <string name="search_result_size">Move map around to explore the %1$d locations in the drawn search area</string>
+    <string name="move_map_drawn_line">Move map around to explore your drawn line</string>
+    <string name="draw_instruction">Move your finger on the map to draw a search area</string>
+    <string name="user_location_permission_explanation">This app needs location permissions in order to show its functionality.</string>
+    <string name="user_location_permission_not_granted">You didn\'t grant location permissions.</string>
+    <string name="new_location">New lat: %1$s New longitude: %2$s</string>
 </resources>
