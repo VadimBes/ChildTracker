@@ -7,6 +7,8 @@ import com.example.android.childtracker.data.entities.Parent
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,21 +18,21 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
 
-@AndroidEntryPoint
+
 class ChildViewModel :ViewModel(){
 
-    @Inject
-    private lateinit var auth: FirebaseAuth
+
+    private var auth: FirebaseAuth =FirebaseAuth.getInstance()
 
     private val _currentUserLogged = MutableLiveData<Boolean>()
     val currentUserLogged: LiveData<Boolean>
         get() = _currentUserLogged
 
-    @Inject
-    private lateinit var personCollectionRef : CollectionReference
 
-    @Inject
-    private lateinit var childCollectionRef : CollectionReference
+    private var personCollectionRef : CollectionReference = Firebase.firestore.collection("parents")
+
+
+    private var childCollectionRef : CollectionReference = Firebase.firestore.collection("children")
 
     lateinit var currentUser: FirebaseUser
 

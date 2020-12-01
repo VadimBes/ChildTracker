@@ -35,6 +35,10 @@ android {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
 
+    buildFeatures {
+        dataBinding true
+    }
+
     dataBinding{
         enabled = true
     }
@@ -51,6 +55,9 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.4.10"
+
+    kapt "com.android.databinding:compiler:3.1.4"
 
     //MapBox and Turf
     implementation 'com.mapbox.mapboxsdk:mapbox-android-sdk:9.5.0'

@@ -13,15 +13,5 @@ import javax.inject.Singleton
 @InstallIn(ApplicationComponent::class)
 object AppModule {
 
-    @Singleton
-    @Provides
-    fun provideAuth() = FirebaseAuth.getInstance()
 
-    @Singleton
-    @Provides
-    fun providePersonCollections() = Firebase.firestore.collection("parents")
-
-    @Singleton
-    @Provides
-    fun provideChildCollections() = Firebase.firestore.collection("children")
 }

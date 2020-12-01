@@ -15,21 +15,21 @@ import kotlinx.coroutines.tasks.await
 import timber.log.Timber
 import javax.inject.Inject
 
-@AndroidEntryPoint
+
 class ParentViewModel : ViewModel() {
 
-    @Inject
-    private lateinit var auth: FirebaseAuth
+
+    private var auth: FirebaseAuth = FirebaseAuth.getInstance()
 
     private val _currentUserLogged = MutableLiveData<Boolean>()
     val currentUserLogged: LiveData<Boolean>
         get() = _currentUserLogged
 
-    @Inject
-    private lateinit var personCollectionRef :CollectionReference
 
-    @Inject
-    private lateinit var childCollectionRef :CollectionReference
+    private var personCollectionRef :CollectionReference = Firebase.firestore.collection("parents")
+
+
+    private var childCollectionRef :CollectionReference = Firebase.firestore.collection("children")
 
     lateinit var currentUser: FirebaseUser
 
