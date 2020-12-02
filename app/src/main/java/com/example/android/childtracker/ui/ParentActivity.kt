@@ -13,8 +13,10 @@ import android.view.View.OnTouchListener
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.ViewModelProvider
 import com.example.android.childtracker.R
 import com.example.android.childtracker.databinding.ActivityParentBinding
+import com.example.android.childtracker.ui.viewmodel.ParentViewModel
 import com.example.android.childtracker.utils.Constants.FILL_OPACITY
 import com.example.android.childtracker.utils.Constants.FREEHAND_DRAW_FILL_LAYER_ID
 import com.example.android.childtracker.utils.Constants.FREEHAND_DRAW_FILL_LAYER_SOURCE_ID
@@ -22,9 +24,6 @@ import com.example.android.childtracker.utils.Constants.FREEHAND_DRAW_LINE_LAYER
 import com.example.android.childtracker.utils.Constants.FREEHAND_DRAW_LINE_LAYER_SOURCE_ID
 import com.example.android.childtracker.utils.Constants.MARKER_SYMBOL_LAYER_SOURCE_ID
 import com.example.android.childtracker.utils.Constants.REQUEST_CODE_LOCATION_PERMISSION
-import com.example.android.childtracker.utils.Constants.SEARCH_DATA_MARKER_ID
-import com.example.android.childtracker.utils.Constants.SEARCH_DATA_SYMBOL_LAYER_ID
-import com.example.android.childtracker.utils.Constants.SEARCH_DATA_SYMBOL_LAYER_SOURCE_ID
 import com.example.android.childtracker.utils.PermissionUtility
 import com.mapbox.android.core.location.LocationEngine
 import com.mapbox.geojson.*
@@ -32,11 +31,8 @@ import com.mapbox.mapboxsdk.Mapbox
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.Style
 import com.mapbox.mapboxsdk.style.layers.FillLayer
-import com.mapbox.mapboxsdk.style.layers.Property
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory
-import com.mapbox.mapboxsdk.style.layers.SymbolLayer
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
-import com.mapbox.turf.TurfJoins
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
 
@@ -53,6 +49,7 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
     private val drawSingleLineOnly = false
     private var canRecive = false
     private var drawnPolygon: Polygon? = null
+    lateinit var viewModel :ParentViewModel
 
     @SuppressLint("ClickableViewAccessibility")
     private val customOnTouchListener =
@@ -66,7 +63,7 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
             )
 
             // Draw the line on the map as the finger is dragged along the map
-            freehandTouchPointListForLine.add(screenTouchPoint)
+//            freehandTouchPointListForLine.add(screenTouchPoint)
             mapboxMap!!.getStyle { style ->
 
                 // Draw a polygon area if drawSingleLineOnly == false
@@ -96,9 +93,11 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
 
                     // If drawing polygon, add the first screen touch point to the end of
                     // the LineLayer list so that it's
-                    if (!drawSingleLineOnly) {
-                        freehandTouchPointListForLine.add(freehandTouchPointListForPolygon[0])
-                    }
+//                    if (!drawSingleLineOnly) {
+//                        freehandTouchPointListForLine.add(freehandTouchPointListForPolygon[0])
+//                    }
+                    Log.d("MyTag", "In this state")
+                    viewModel.saveGeoPoint(freehandTouchPointListForPolygon)
                     enableMapMovement()
                     canRecive = true
                 }
@@ -111,6 +110,8 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token))
         binding = DataBindingUtil.setContentView(this, R.layout.activity_parent)
         requestPermissions()
+        viewModel = ViewModelProvider(this).get(ParentViewModel::class.java)
+        binding.viewModel = viewModel
 
         binding.mapView.getMapAsync { mapboxMap ->
             mapboxMap.setStyle(
@@ -123,8 +124,8 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
                     .setOnClickListener { // Reset ArrayLists
                         freehandTouchPointListForPolygon =
                             ArrayList<Point>()
-                        freehandTouchPointListForLine =
-                            ArrayList<Point>()
+//                        freehandTouchPointListForLine =
+//                            ArrayList<Point>()
 
                         // Add empty Feature array to the sources
                         val drawLineSource =

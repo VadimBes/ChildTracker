@@ -1,5 +1,6 @@
 package com.example.android.childtracker.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -7,7 +8,10 @@ import com.example.android.childtracker.data.entities.Parent
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.ktx.toObject
+import com.google.firebase.firestore.ktx.toObjects
 import com.google.firebase.ktx.Firebase
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +32,10 @@ class ChildViewModel :ViewModel(){
     val currentUserLogged: LiveData<Boolean>
         get() = _currentUserLogged
 
+    private val _polygonPoints = MutableLiveData<ArrayList<GeoPoint>>()
+    val polygonPoints: LiveData<ArrayList<GeoPoint>>
+        get() = _polygonPoints
+
 
     private var personCollectionRef : CollectionReference = Firebase.firestore.collection("parents")
 
@@ -35,6 +43,10 @@ class ChildViewModel :ViewModel(){
     private var childCollectionRef : CollectionReference = Firebase.firestore.collection("children")
 
     lateinit var currentUser: FirebaseUser
+
+    init {
+        subscribeToPolygonParent()
+    }
 
     private fun registerUser() = CoroutineScope(Dispatchers.IO).launch {
         try {
@@ -78,5 +90,25 @@ class ChildViewModel :ViewModel(){
             }
         }
     }
+
+    @Suppress("UNREACHABLE_CODE")
+    private fun subscribeToPolygonParent(){
+        personCollectionRef.document(auth.currentUser!!.uid).addSnapshotListener{querySnapshot,firebaseFirestoreException->
+            firebaseFirestoreException?.let {
+                Log.d("MyTag",it!!.message)
+                return@addSnapshotListener
+            }
+            querySnapshot?.let {
+                val parent = it.toObject<Parent>()
+                parent?.polygon?.let {arrayList->
+                    _polygonPoints.value = arrayList
+                }
+                Log.d("MyTag",parent!!.name)
+            }
+
+        }
+    }
+
+
 
 }

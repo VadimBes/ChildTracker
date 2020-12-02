@@ -1,19 +1,20 @@
 package com.example.android.childtracker.ui.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.android.childtracker.data.entities.Parent
+import com.example.android.childtracker.utils.Extension.toGeoPointList
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import dagger.hilt.android.AndroidEntryPoint
+import com.mapbox.geojson.Point
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
-import javax.inject.Inject
 
 
 class ParentViewModel : ViewModel() {
@@ -72,6 +73,19 @@ class ParentViewModel : ViewModel() {
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 Timber.d(e)
+            }
+        }
+    }
+
+    fun saveGeoPoint(arrayPoints: ArrayList<Point>) = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            withContext(Dispatchers.Main){
+                Log.d("MyTag", auth.currentUser?.uid)
+            }
+            personCollectionRef.document(auth.currentUser!!.uid).update("polygon",arrayPoints.toGeoPointList()).await()
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                Log.d("MyTag",e.message)
             }
         }
     }
