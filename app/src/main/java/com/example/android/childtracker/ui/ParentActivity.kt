@@ -2,6 +2,7 @@ package com.example.android.childtracker.ui
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.PointF
 import android.os.Build
@@ -13,10 +14,13 @@ import android.view.View.OnTouchListener
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import com.example.android.childtracker.R
 import com.example.android.childtracker.databinding.ActivityParentBinding
+import com.example.android.childtracker.services.TrackingChildService
 import com.example.android.childtracker.ui.viewmodel.ParentViewModel
+import com.example.android.childtracker.utils.Constants.ACTION_START_OR_RESUME_SERVICE
 import com.example.android.childtracker.utils.Constants.FILL_OPACITY
 import com.example.android.childtracker.utils.Constants.FREEHAND_DRAW_FILL_LAYER_ID
 import com.example.android.childtracker.utils.Constants.FREEHAND_DRAW_FILL_LAYER_SOURCE_ID
@@ -25,13 +29,14 @@ import com.example.android.childtracker.utils.Constants.FREEHAND_DRAW_LINE_LAYER
 import com.example.android.childtracker.utils.Constants.MARKER_SYMBOL_LAYER_SOURCE_ID
 import com.example.android.childtracker.utils.Constants.REQUEST_CODE_LOCATION_PERMISSION
 import com.example.android.childtracker.utils.PermissionUtility
-import com.mapbox.android.core.location.LocationEngine
 import com.mapbox.geojson.*
 import com.mapbox.mapboxsdk.Mapbox
+import com.mapbox.mapboxsdk.annotations.MarkerOptions
+import com.mapbox.mapboxsdk.geometry.LatLng
 import com.mapbox.mapboxsdk.maps.MapboxMap
 import com.mapbox.mapboxsdk.maps.Style
 import com.mapbox.mapboxsdk.style.layers.FillLayer
-import com.mapbox.mapboxsdk.style.layers.PropertyFactory
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
@@ -42,18 +47,17 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
     private lateinit var binding: ActivityParentBinding
     private var mapboxMap: MapboxMap? = null
     private var freehandTouchPointListForPolygon: ArrayList<Point> = ArrayList()
-    private var freehandTouchPointListForLine: ArrayList<Point> = ArrayList()
-    lateinit var locationEngine: LocationEngine
+
     private var searchPointFeatureCollection: FeatureCollection? = null
     private var showSearchDataLocations = true
     private val drawSingleLineOnly = false
     private var canRecive = false
     private var drawnPolygon: Polygon? = null
-    lateinit var viewModel :ParentViewModel
+    private lateinit var viewModel :ParentViewModel
 
     @SuppressLint("ClickableViewAccessibility")
     private val customOnTouchListener =
-        OnTouchListener { view, motionEvent ->
+        OnTouchListener { _, motionEvent ->
             val latLngTouchCoordinate = mapboxMap!!.projection.fromScreenLocation(
                 PointF(motionEvent.x, motionEvent.y)
             )
@@ -68,15 +72,19 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
 
                 // Draw a polygon area if drawSingleLineOnly == false
                 if (!drawSingleLineOnly) {
-                    if (freehandTouchPointListForPolygon.size < 2) {
-                        freehandTouchPointListForPolygon.add(screenTouchPoint)
-                    } else if (freehandTouchPointListForPolygon.size == 2) {
-                        freehandTouchPointListForPolygon.add(screenTouchPoint)
-                        freehandTouchPointListForPolygon.add(freehandTouchPointListForPolygon[0])
-                    } else {
-                        freehandTouchPointListForPolygon.removeAt(freehandTouchPointListForPolygon.size - 1)
-                        freehandTouchPointListForPolygon.add(screenTouchPoint)
-                        freehandTouchPointListForPolygon.add(freehandTouchPointListForPolygon[0])
+                    when {
+                        freehandTouchPointListForPolygon.size < 2 -> {
+                            freehandTouchPointListForPolygon.add(screenTouchPoint)
+                        }
+                        freehandTouchPointListForPolygon.size == 2 -> {
+                            freehandTouchPointListForPolygon.add(screenTouchPoint)
+                            freehandTouchPointListForPolygon.add(freehandTouchPointListForPolygon[0])
+                        }
+                        else -> {
+                            freehandTouchPointListForPolygon.removeAt(freehandTouchPointListForPolygon.size - 1)
+                            freehandTouchPointListForPolygon.add(screenTouchPoint)
+                            freehandTouchPointListForPolygon.add(freehandTouchPointListForPolygon[0])
+                        }
                     }
                 }
                 // Create and show a FillLayer polygon where the search area is
@@ -88,15 +96,8 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
                 drawnPolygon = Polygon.fromLngLats(polygonList)
                 fillPolygonSource?.setGeoJson(drawnPolygon)
 
-                // Take certain actions when the drawing is done
-                if (motionEvent.action == MotionEvent.ACTION_UP) {
 
-                    // If drawing polygon, add the first screen touch point to the end of
-                    // the LineLayer list so that it's
-//                    if (!drawSingleLineOnly) {
-//                        freehandTouchPointListForLine.add(freehandTouchPointListForPolygon[0])
-//                    }
-                    Log.d("MyTag", "In this state")
+                if (motionEvent.action == MotionEvent.ACTION_UP) {
                     viewModel.saveGeoPoint(freehandTouchPointListForPolygon)
                     enableMapMovement()
                     canRecive = true
@@ -112,6 +113,7 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
         requestPermissions()
         viewModel = ViewModelProvider(this).get(ParentViewModel::class.java)
         binding.viewModel = viewModel
+        sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
 
         binding.mapView.getMapAsync { mapboxMap ->
             mapboxMap.setStyle(
@@ -124,9 +126,6 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
                     .setOnClickListener { // Reset ArrayLists
                         freehandTouchPointListForPolygon =
                             ArrayList<Point>()
-//                        freehandTouchPointListForLine =
-//                            ArrayList<Point>()
-
                         // Add empty Feature array to the sources
                         val drawLineSource =
                             style.getSourceAs<GeoJsonSource>(FREEHAND_DRAW_LINE_LAYER_SOURCE_ID)
@@ -137,6 +136,16 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
                         enableMapDrawing()
                     }
             }
+
+            setChildLocationObserver()
+        }
+    }
+
+
+    private fun sendCommandToService(action:String){
+        Intent(this,TrackingChildService::class.java).also {
+            it.action = action
+            this.startService(it)
         }
     }
 
@@ -152,8 +161,8 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
                     FREEHAND_DRAW_FILL_LAYER_ID,
                     FREEHAND_DRAW_FILL_LAYER_SOURCE_ID
                 ).withProperties(
-                    PropertyFactory.fillColor(Color.RED),
-                    PropertyFactory.fillOpacity(FILL_OPACITY)
+                    fillColor(Color.RED),
+                    fillOpacity(FILL_OPACITY)
                 ), FREEHAND_DRAW_LINE_LAYER_ID
             )
             enableMapDrawing()
@@ -162,6 +171,15 @@ class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks 
                 getString(R.string.draw_instruction), Toast.LENGTH_SHORT
             ).show()
         }
+    }
+
+    private fun setChildLocationObserver(){
+        TrackingChildService.locationChild.observe(this, Observer {child->
+            child?.location?.let {
+                mapboxMap?.clear()
+                mapboxMap?.addMarker(MarkerOptions().position(LatLng(it.latitude,it.longitude)).setTitle(child.name))
+            }
+        })
     }
 
     @SuppressLint("ClickableViewAccessibility")

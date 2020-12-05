@@ -16,4 +16,16 @@ object Constants {
     const val DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L
     const val DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5
     const val REQUEST_CODE_LOCATION_PERMISSION = 0
+
+    const val SOURCE_ID = "SOURCE_ID"
+    const val ICON_ID = "ICON_ID"
+    const val LAYER_ID = "LAYER_ID"
+
+    const val ACTION_START_OR_RESUME_SERVICE = "ACTION_START_OR_RESUME_SERVICE"
+
+    const val NOTIFICATION_CHANNEL_ID = "tracking_channel"
+    const val NOTIFICATION_CHANNEL_NAME = "Tracking_child"
+    const val NOTIFICATION_CHILD_ID = 1
+
+
 }

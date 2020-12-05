@@ -105,7 +105,6 @@ class ChildViewModel :ViewModel(){
                 }
                 Log.d("MyTag",parent!!.name)
             }
-
         }
     }
 

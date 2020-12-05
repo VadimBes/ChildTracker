@@ -27,10 +27,16 @@ class ParentViewModel : ViewModel() {
         get() = _currentUserLogged
 
 
-    private var personCollectionRef :CollectionReference = Firebase.firestore.collection("parents")
+
+    companion object {
+        private val _touchPointListForService = MutableLiveData<ArrayList<Point>?>()
+        val touchPointListForService: LiveData<ArrayList<Point>?>
+            get() = _touchPointListForService
+    }
 
 
-    private var childCollectionRef :CollectionReference = Firebase.firestore.collection("children")
+    private var personCollectionRef: CollectionReference = Firebase.firestore.collection("parents")
+    private var childCollectionRef: CollectionReference = Firebase.firestore.collection("children")
 
     lateinit var currentUser: FirebaseUser
 
@@ -67,9 +73,9 @@ class ParentViewModel : ViewModel() {
             }
         }
 
-    private fun addChild(childUID:String) = CoroutineScope(Dispatchers.IO).launch {
+    private fun addChild(childUID: String) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            personCollectionRef.document(currentUser.uid).update("childId",childUID).await()
+            personCollectionRef.document(currentUser.uid).update("childId", childUID).await()
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 Timber.d(e)
@@ -79,17 +85,17 @@ class ParentViewModel : ViewModel() {
 
     fun saveGeoPoint(arrayPoints: ArrayList<Point>) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            withContext(Dispatchers.Main){
+            withContext(Dispatchers.Main) {
                 Log.d("MyTag", auth.currentUser?.uid)
             }
-            personCollectionRef.document(auth.currentUser!!.uid).update("polygon",arrayPoints.toGeoPointList()).await()
+            personCollectionRef.document(auth.currentUser!!.uid)
+                .update("polygon", arrayPoints.toGeoPointList()).await()
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
-                Log.d("MyTag",e.message)
+                Log.d("MyTag", e.message)
             }
         }
     }
-
 
 
 }
