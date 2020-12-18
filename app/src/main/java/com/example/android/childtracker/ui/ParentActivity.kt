@@ -16,6 +16,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.findNavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.fragment.findNavController
+import androidx.navigation.ui.setupWithNavController
 import com.example.android.childtracker.R
 import com.example.android.childtracker.databinding.ActivityParentBinding
 import com.example.android.childtracker.services.TrackingChildService
@@ -38,203 +42,74 @@ import com.mapbox.mapboxsdk.maps.Style
 import com.mapbox.mapboxsdk.style.layers.FillLayer
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory.*
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.android.synthetic.main.activity_parent.*
 import pub.devrel.easypermissions.AppSettingsDialog
 import pub.devrel.easypermissions.EasyPermissions
 
-
-class ParentActivity : AppCompatActivity(), EasyPermissions.PermissionCallbacks {
+@AndroidEntryPoint
+class ParentActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityParentBinding
-    private var mapboxMap: MapboxMap? = null
-    private var freehandTouchPointListForPolygon: ArrayList<Point> = ArrayList()
-
-    private var searchPointFeatureCollection: FeatureCollection? = null
-    private var showSearchDataLocations = true
-    private val drawSingleLineOnly = false
-    private var canRecive = false
-    private var drawnPolygon: Polygon? = null
     private lateinit var viewModel :ParentViewModel
 
-    @SuppressLint("ClickableViewAccessibility")
-    private val customOnTouchListener =
-        OnTouchListener { _, motionEvent ->
-            val latLngTouchCoordinate = mapboxMap!!.projection.fromScreenLocation(
-                PointF(motionEvent.x, motionEvent.y)
-            )
-            val screenTouchPoint = Point.fromLngLat(
-                latLngTouchCoordinate.longitude,
-                latLngTouchCoordinate.latitude
-            )
-
-            // Draw the line on the map as the finger is dragged along the map
-//            freehandTouchPointListForLine.add(screenTouchPoint)
-            mapboxMap!!.getStyle { style ->
-
-                // Draw a polygon area if drawSingleLineOnly == false
-                if (!drawSingleLineOnly) {
-                    when {
-                        freehandTouchPointListForPolygon.size < 2 -> {
-                            freehandTouchPointListForPolygon.add(screenTouchPoint)
-                        }
-                        freehandTouchPointListForPolygon.size == 2 -> {
-                            freehandTouchPointListForPolygon.add(screenTouchPoint)
-                            freehandTouchPointListForPolygon.add(freehandTouchPointListForPolygon[0])
-                        }
-                        else -> {
-                            freehandTouchPointListForPolygon.removeAt(freehandTouchPointListForPolygon.size - 1)
-                            freehandTouchPointListForPolygon.add(screenTouchPoint)
-                            freehandTouchPointListForPolygon.add(freehandTouchPointListForPolygon[0])
-                        }
-                    }
-                }
-                // Create and show a FillLayer polygon where the search area is
-                val fillPolygonSource =
-                    style.getSourceAs<GeoJsonSource>(FREEHAND_DRAW_FILL_LAYER_SOURCE_ID)
-                val polygonList: MutableList<List<Point>> =
-                    ArrayList()
-                polygonList.add(freehandTouchPointListForPolygon)
-                drawnPolygon = Polygon.fromLngLats(polygonList)
-                fillPolygonSource?.setGeoJson(drawnPolygon)
-
-
-                if (motionEvent.action == MotionEvent.ACTION_UP) {
-                    viewModel.saveGeoPoint(freehandTouchPointListForPolygon)
-                    enableMapMovement()
-                    canRecive = true
-                }
-            }
-            true
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token))
+        Log.d("MuTag","Здесь")
         binding = DataBindingUtil.setContentView(this, R.layout.activity_parent)
-        requestPermissions()
+        val navHostFragment = supportFragmentManager.findFragmentById(R.id.navHostFragment) as NavHostFragment
+        binding.bottomNavigationView.setupWithNavController(navHostFragment.findNavController())
+       // requestPermissions()
         viewModel = ViewModelProvider(this).get(ParentViewModel::class.java)
-        binding.viewModel = viewModel
-        sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
-
-        binding.mapView.getMapAsync { mapboxMap ->
-            mapboxMap.setStyle(
-                Style.LIGHT
-            ) { style ->
-                this.mapboxMap = mapboxMap
-                setUpExample(null)
-
-                findViewById<View>(R.id.clear_map_for_new_draw_fab)
-                    .setOnClickListener { // Reset ArrayLists
-                        freehandTouchPointListForPolygon =
-                            ArrayList<Point>()
-                        // Add empty Feature array to the sources
-                        val drawLineSource =
-                            style.getSourceAs<GeoJsonSource>(FREEHAND_DRAW_LINE_LAYER_SOURCE_ID)
-                        drawLineSource?.setGeoJson(FeatureCollection.fromFeatures(arrayOf()))
-                        val fillPolygonSource =
-                            style.getSourceAs<GeoJsonSource>(FREEHAND_DRAW_FILL_LAYER_SOURCE_ID)
-                        fillPolygonSource?.setGeoJson(FeatureCollection.fromFeatures(arrayOf()))
-                        enableMapDrawing()
-                    }
-            }
-
-            setChildLocationObserver()
-        }
     }
 
 
-    private fun sendCommandToService(action:String){
-        Intent(this,TrackingChildService::class.java).also {
-            it.action = action
-            this.startService(it)
-        }
-    }
 
-    private fun setUpExample(searchDataFeatureCollection: FeatureCollection?) {
-        searchPointFeatureCollection = searchDataFeatureCollection
-        mapboxMap!!.getStyle { loadedStyle ->
-            loadedStyle.addSource(GeoJsonSource(FREEHAND_DRAW_LINE_LAYER_SOURCE_ID))
-            loadedStyle.addSource(GeoJsonSource(MARKER_SYMBOL_LAYER_SOURCE_ID))
-            loadedStyle.addSource(GeoJsonSource(FREEHAND_DRAW_FILL_LAYER_SOURCE_ID))
-            // Add freehand draw polygon FillLayer to the map
-            loadedStyle.addLayerBelow(
-                FillLayer(
-                    FREEHAND_DRAW_FILL_LAYER_ID,
-                    FREEHAND_DRAW_FILL_LAYER_SOURCE_ID
-                ).withProperties(
-                    fillColor(Color.RED),
-                    fillOpacity(FILL_OPACITY)
-                ), FREEHAND_DRAW_LINE_LAYER_ID
-            )
-            enableMapDrawing()
-            Toast.makeText(
-                this,
-                getString(R.string.draw_instruction), Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
-    private fun setChildLocationObserver(){
-        TrackingChildService.locationChild.observe(this, Observer {child->
-            child?.location?.let {
-                mapboxMap?.clear()
-                mapboxMap?.addMarker(MarkerOptions().position(LatLng(it.latitude,it.longitude)).setTitle(child.name))
-            }
-        })
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    private fun enableMapMovement() {
-        binding.mapView.setOnTouchListener(null)
-    }
-
-    @SuppressLint("ClickableViewAccessibility")
-    private fun enableMapDrawing() {
-        binding.mapView.setOnTouchListener(customOnTouchListener)
-    }
-
-    private fun requestPermissions() {
-        if (PermissionUtility.hasPermission(this)) {
-            return
-        }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            EasyPermissions.requestPermissions(
-                this,
-                "Вы должны принять разрешения для отслеживания местоположения, что-бы использовать это приложение",
-                REQUEST_CODE_LOCATION_PERMISSION,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-            )
-
-        } else {
-            EasyPermissions.requestPermissions(
-                this,
-                "Вы должны принять разрешения для отслеживания местоположения, что-бы использовать это приложение",
-                REQUEST_CODE_LOCATION_PERMISSION,
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
-            )
-        }
-
-    }
-
-
-    override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
-        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
-            AppSettingsDialog.Builder(this).build().show()
-        } else {
-            requestPermissions()
-        }
-    }
-
-    override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {}
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
-    }
+//    private fun requestPermissions() {
+//        if (PermissionUtility.hasPermission(this)) {
+//            return
+//        }
+//        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+//            EasyPermissions.requestPermissions(
+//                this,
+//                "Вы должны принять разрешения для отслеживания местоположения, что-бы использовать это приложение",
+//                REQUEST_CODE_LOCATION_PERMISSION,
+//                Manifest.permission.ACCESS_FINE_LOCATION,
+//                Manifest.permission.ACCESS_COARSE_LOCATION,
+//            )
+//
+//        } else {
+//            EasyPermissions.requestPermissions(
+//                this,
+//                "Вы должны принять разрешения для отслеживания местоположения, что-бы использовать это приложение",
+//                REQUEST_CODE_LOCATION_PERMISSION,
+//                Manifest.permission.ACCESS_FINE_LOCATION,
+//                Manifest.permission.ACCESS_COARSE_LOCATION,
+//                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+//            )
+//        }
+//
+//    }
+//
+//
+//    override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
+//        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+//            AppSettingsDialog.Builder(this).build().show()
+//        } else {
+//            requestPermissions()
+//        }
+//    }
+//
+//    override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {}
+//
+//    override fun onRequestPermissionsResult(
+//        requestCode: Int,
+//        permissions: Array<out String>,
+//        grantResults: IntArray
+//    ) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+//        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+//    }
 }

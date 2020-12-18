@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/nav_graph"
+    app:startDestination="@id/trackingFragment">
+
+    <fragment
+        android:id="@+id/trackingFragment"
+        android:name="com.example.android.childtracker.ui.fragments.TrackingFragment"
+        android:label="TrackingFragment" />
+    <fragment
+        android:id="@+id/settingFragment"
+        android:name="com.example.android.childtracker.ui.fragments.SettingFragment"
+        android:label="SettingFragment" />
+</navigation>

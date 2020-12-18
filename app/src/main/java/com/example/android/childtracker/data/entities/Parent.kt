@@ -6,6 +6,6 @@ import com.mapbox.geojson.Point
 
 data class Parent (
     val name:String = "",
-    val polygon: ArrayList<GeoPoint> = arrayListOf(),
+    val polygon: ArrayList<GeoPoint?> = arrayListOf(),
     val childId: String = ""
 )

@@ -13,7 +13,7 @@ object Constants {
     const val LINE_WIDTH = 5f
     const val LINE_OPACITY = 1f
     const val FILL_OPACITY = .4f
-    const val DEFAULT_INTERVAL_IN_MILLISECONDS = 1000L
+    const val DEFAULT_INTERVAL_IN_MILLISECONDS = 5000L
     const val DEFAULT_MAX_WAIT_TIME = DEFAULT_INTERVAL_IN_MILLISECONDS * 5
     const val REQUEST_CODE_LOCATION_PERMISSION = 0
 
@@ -26,6 +26,13 @@ object Constants {
     const val NOTIFICATION_CHANNEL_ID = "tracking_channel"
     const val NOTIFICATION_CHANNEL_NAME = "Tracking_child"
     const val NOTIFICATION_CHILD_ID = 1
+
+    const val NOTIFICATION_CHILD_CHANNEL_ID = "tracking_channel_child"
+    const val NOTIFICATION_CHILD_CHANNEL_NAME = "Tracking"
+    const val NOTIFICATION_CHILD_SERVICE_ID = 2
+
+    const val SHARED_PREFERENCE_FILE_NAME = "Profession"
+    const val SHARED_PREFERENCE_KEY_NAME = "KEY"
 
 
 }

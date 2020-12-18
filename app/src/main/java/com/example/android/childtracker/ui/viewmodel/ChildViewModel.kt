@@ -1,5 +1,6 @@
 package com.example.android.childtracker.ui.viewmodel
 
+import android.location.Location
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -23,24 +24,21 @@ import timber.log.Timber
 import javax.inject.Inject
 
 
-class ChildViewModel :ViewModel(){
+class ChildViewModel : ViewModel() {
 
 
-    private var auth: FirebaseAuth =FirebaseAuth.getInstance()
+    private var auth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    private val _currentUserLogged = MutableLiveData<Boolean>()
-    val currentUserLogged: LiveData<Boolean>
-        get() = _currentUserLogged
 
-    private val _polygonPoints = MutableLiveData<ArrayList<GeoPoint>>()
-    val polygonPoints: LiveData<ArrayList<GeoPoint>>
+    private val _polygonPoints = MutableLiveData<ArrayList<GeoPoint?>>()
+    val polygonPoints: LiveData<ArrayList<GeoPoint?>>
         get() = _polygonPoints
 
 
-    private var personCollectionRef : CollectionReference = Firebase.firestore.collection("parents")
+    private var personCollectionRef: CollectionReference = Firebase.firestore.collection("parents")
 
 
-    private var childCollectionRef : CollectionReference = Firebase.firestore.collection("children")
+    private var childCollectionRef: CollectionReference = Firebase.firestore.collection("children")
 
     lateinit var currentUser: FirebaseUser
 
@@ -48,14 +46,12 @@ class ChildViewModel :ViewModel(){
         subscribeToPolygonParent()
     }
 
-    private fun registerUser() = CoroutineScope(Dispatchers.IO).launch {
+
+
+
+    private fun addParent(parentUID: String) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            auth.createUserWithEmailAndPassword("test@mail.ru", "Baramba").await()
-            auth.currentUser?.let {
-                createChildDocument(it)
-                checkLoggedInState()
-                currentUser = it
-            }
+            childCollectionRef.document(currentUser.uid).update("parentId", parentUID).await()
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 Timber.d(e)
@@ -63,51 +59,35 @@ class ChildViewModel :ViewModel(){
         }
     }
 
-    private fun checkLoggedInState() {
-        _currentUserLogged.value = auth.currentUser != null
-    }
-
-    private suspend fun createChildDocument(currentUser: FirebaseUser) =
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                childCollectionRef.document(currentUser.uid).set(Parent())
-                withContext(Dispatchers.Main) {
-                    checkLoggedInState()
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Timber.d(e)
-                }
-            }
-        }
-
-    private fun addParent(parentUID:String) = CoroutineScope(Dispatchers.IO).launch {
+    fun changeLocation(location: Location) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            childCollectionRef.document(currentUser.uid).update("parentId",parentUID).await()
+            childCollectionRef.document("child1")
+                .update("location", GeoPoint(location.latitude, location.longitude))
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
                 Timber.d(e)
             }
         }
     }
+
 
     @Suppress("UNREACHABLE_CODE")
-    private fun subscribeToPolygonParent(){
-        personCollectionRef.document(auth.currentUser!!.uid).addSnapshotListener{querySnapshot,firebaseFirestoreException->
-            firebaseFirestoreException?.let {
-                Log.d("MyTag",it!!.message)
-                return@addSnapshotListener
-            }
-            querySnapshot?.let {
-                val parent = it.toObject<Parent>()
-                parent?.polygon?.let {arrayList->
-                    _polygonPoints.value = arrayList
+    private fun subscribeToPolygonParent() {
+        personCollectionRef.document("Pa5dtXnLP8Ujx1snYSQ0VLiviSy1")
+            .addSnapshotListener { querySnapshot, firebaseFirestoreException ->
+                firebaseFirestoreException?.let {
+                    Log.d("MyTag", it!!.message)
+                    return@addSnapshotListener
                 }
-                Log.d("MyTag",parent!!.name)
+                querySnapshot?.let {
+                    val parent = it.toObject<Parent>()
+                    parent?.polygon?.let { arrayList ->
+                        _polygonPoints.value = arrayList
+                    }
+                    Log.d("MyTag", parent!!.name)
+                }
             }
-        }
     }
-
 
 
 }

@@ -13,4 +13,10 @@
     <string name="user_location_permission_explanation">This app needs location permissions in order to show its functionality.</string>
     <string name="user_location_permission_not_granted">You didn\'t grant location permissions.</string>
     <string name="new_location">New lat: %1$s New longitude: %2$s</string>
+    <string name="form_username">E-mail</string>
+    <string name="password">Password</string>
+    <string name="text_login">Login</string>
+    <string name="text_register">Register</string>
+    <string name="text_parent">Родитель</string>
+    <string name="text_child">Ребенок</string>
 </resources>
