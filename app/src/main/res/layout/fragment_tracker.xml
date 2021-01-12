@@ -37,7 +37,7 @@
             fab:fab_labelStyle="@style/menu_labels_style">
 
             <com.getbase.floatingactionbutton.FloatingActionButton
-                android:id="@+id/switch_to_single_line_only_fab"
+                android:id="@+id/enable_map_fab"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 fab:fab_colorNormal="@color/mapboxOrange"
@@ -55,7 +55,7 @@
                 fab:fab_title="@string/clear_map" />
 
             <com.getbase.floatingactionbutton.FloatingActionButton
-                android:id="@+id/show_search_data_points_fab"
+                android:id="@+id/stop_service_fab"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 fab:fab_colorNormal="@color/mapboxGreen"

@@ -22,6 +22,10 @@ object Constants {
     const val LAYER_ID = "LAYER_ID"
 
     const val ACTION_START_OR_RESUME_SERVICE = "ACTION_START_OR_RESUME_SERVICE"
+    const val ACTION_PAUSE_SERVICE = "ACTION_PAUSE_SERVICE"
+    const val ACTION_STOP_SERVICE = "ACTION_STOP_SERVICE"
+    const val ACTION_CALL_SERVICE = "ACTION_CALL_SERVICE"
+    const val ACTION_SMS_SERVICE = "ACTION_SMS_SERVICE"
 
     const val NOTIFICATION_CHANNEL_ID = "tracking_channel"
     const val NOTIFICATION_CHANNEL_NAME = "Tracking_child"
@@ -33,6 +37,8 @@ object Constants {
 
     const val SHARED_PREFERENCE_FILE_NAME = "Profession"
     const val SHARED_PREFERENCE_KEY_NAME = "KEY"
+
+    const val REQUEST_IMAGE_PICK = 0
 
 
 }

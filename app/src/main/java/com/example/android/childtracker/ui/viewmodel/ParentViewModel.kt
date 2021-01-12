@@ -6,9 +6,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.android.childtracker.data.entities.Parent
 import com.example.android.childtracker.utils.Extension.toGeoPointList
+import com.example.android.childtracker.utils.Extension.toShortUID
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.mapbox.geojson.Point
@@ -22,11 +24,6 @@ class ParentViewModel : ViewModel() {
 
     private var auth: FirebaseAuth = FirebaseAuth.getInstance()
 
-    private val _currentUserLogged = MutableLiveData<Boolean>()
-    val currentUserLogged: LiveData<Boolean>
-        get() = _currentUserLogged
-
-
 
     companion object {
         private val _touchPointListForService = MutableLiveData<ArrayList<Point>?>()
@@ -34,67 +31,51 @@ class ParentViewModel : ViewModel() {
             get() = _touchPointListForService
     }
 
+    private val _needFirstStartService = MutableLiveData<Boolean>()
+    val needFirstStartService:LiveData<Boolean>
+    get() = _needFirstStartService
 
-    private var personCollectionRef: CollectionReference = Firebase.firestore.collection("parents")
-    private var childCollectionRef: CollectionReference = Firebase.firestore.collection("children")
 
-    lateinit var currentUser: FirebaseUser
+    private var parentCollectionRef: CollectionReference = Firebase.firestore.collection("parents")
 
-    private fun registerUser() = CoroutineScope(Dispatchers.IO).launch {
+    fun clearPolygon() = CoroutineScope(Dispatchers.IO).launch {
         try {
-            auth.createUserWithEmailAndPassword("test@mail.ru", "Baramba").await()
-            auth.currentUser?.let {
-                createParentDocument(it)
-                checkLoggedInState()
-                currentUser = it
-            }
+            parentCollectionRef.document(auth.currentUser?.uid!!.toShortUID())
+                .update("polygon", ArrayList<GeoPoint>()).await()
         } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                Timber.d(e)
-            }
+            Timber.d(e)
         }
     }
 
-    private fun checkLoggedInState() {
-        _currentUserLogged.value = auth.currentUser != null
-    }
-
-    private suspend fun createParentDocument(currentUser: FirebaseUser) =
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                personCollectionRef.document(currentUser.uid).set(Parent())
-                withContext(Dispatchers.Main) {
-                    checkLoggedInState()
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Timber.d(e)
-                }
-            }
-        }
-
-    private fun addChild(childUID: String) = CoroutineScope(Dispatchers.IO).launch {
-        try {
-            personCollectionRef.document(currentUser.uid).update("childId", childUID).await()
-        } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                Timber.d(e)
-            }
-        }
-    }
 
     fun saveGeoPoint(arrayPoints: ArrayList<Point>) = CoroutineScope(Dispatchers.IO).launch {
         try {
-            withContext(Dispatchers.Main) {
-                Log.d("MyTag", auth.currentUser?.uid)
-            }
-            personCollectionRef.document(auth.currentUser!!.uid)
+            parentCollectionRef.document(auth.currentUser!!.uid.toShortUID())
                 .update("polygon", arrayPoints.toGeoPointList()).await()
         } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                Log.d("MyTag", e.message)
-            }
+            Timber.d(e)
         }
+    }
+
+    fun checkChild() = CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val query = parentCollectionRef.document(auth.currentUser!!.uid.toShortUID()).get().await()
+            val parent = query.toObject(Parent::class.java)
+            parent?.let {
+                if (it.childId!=""){
+                    withContext(Dispatchers.Main){
+                        _needFirstStartService.value = true
+                    }
+                }
+            }
+
+        } catch (e: Exception) {
+            Timber.d(e)
+        }
+    }
+
+    fun finishCheck(){
+        _needFirstStartService.value = false
     }
 
 

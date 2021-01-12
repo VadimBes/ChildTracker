@@ -19,6 +19,9 @@ import com.example.android.childtracker.databinding.FragmentTrackerBinding
 import com.example.android.childtracker.services.TrackingChildService
 import com.example.android.childtracker.ui.viewmodel.ParentViewModel
 import com.example.android.childtracker.utils.Constants
+import com.example.android.childtracker.utils.Constants.ACTION_START_OR_RESUME_SERVICE
+import com.example.android.childtracker.utils.Constants.ACTION_STOP_SERVICE
+import com.google.android.material.snackbar.Snackbar
 import com.mapbox.geojson.FeatureCollection
 import com.mapbox.geojson.Point
 import com.mapbox.geojson.Polygon
@@ -44,10 +47,11 @@ class TrackingFragment : Fragment(R.layout.fragment_tracker) {
     private var searchPointFeatureCollection: FeatureCollection? = null
     private var showSearchDataLocations = true
     private val drawSingleLineOnly = false
-    private var canRecive = false
     private var drawnPolygon: Polygon? = null
+    private var isDrawing: Boolean = false
+    private var serviceIsRunning = true
+    private val viewModel: ParentViewModel by viewModels()
 
-    private val viewModel : ParentViewModel by viewModels()
 
     @SuppressLint("ClickableViewAccessibility")
     private val customOnTouchListener =
@@ -96,7 +100,6 @@ class TrackingFragment : Fragment(R.layout.fragment_tracker) {
                 if (motionEvent.action == MotionEvent.ACTION_UP) {
                     viewModel.saveGeoPoint(freehandTouchPointListForPolygon)
                     enableMapMovement()
-                    canRecive = true
                 }
             }
             true
@@ -107,26 +110,22 @@ class TrackingFragment : Fragment(R.layout.fragment_tracker) {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        binding = FragmentTrackerBinding.inflate(inflater,null,false)
+        binding = FragmentTrackerBinding.inflate(inflater, null, false)
         val view = binding.root
         binding.viewModel = viewModel
         return view
     }
 
 
-
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        binding.viewModel = viewModel
+
         binding.mapView.getMapAsync { mapboxMap ->
             mapboxMap.setStyle(
                 Style.LIGHT
             ) { style ->
                 this.mapboxMap = mapboxMap
                 setUpExample(null)
-
-
-
 
                 binding.clearMapForNewDrawFab
                     .setOnClickListener { // Reset ArrayLists
@@ -140,14 +139,50 @@ class TrackingFragment : Fragment(R.layout.fragment_tracker) {
                             style.getSourceAs<GeoJsonSource>(Constants.FREEHAND_DRAW_FILL_LAYER_SOURCE_ID)
                         fillPolygonSource?.setGeoJson(FeatureCollection.fromFeatures(arrayOf()))
                         enableMapDrawing()
+                        binding.viewModel?.clearPolygon()
+                    }
+
+                binding.enableMapFab
+                    .setOnClickListener { view ->
+                        var textForSnack = ""
+                        if (isDrawing) {
+                            textForSnack = "Рисование выключенно"
+                            enableMapMovement()
+                        } else {
+                            textForSnack = "Рисование включенно"
+                            enableMapDrawing()
+                        }
+                        Snackbar.make(view,textForSnack,Snackbar.LENGTH_LONG).show()
+                    }
+                binding.stopServiceFab
+                    .setOnClickListener {
+                        if (serviceIsRunning){
+                            sendCommandToService(ACTION_STOP_SERVICE)
+                            serviceIsRunning = false
+                        }else{
+                            sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
+                            serviceIsRunning = true
+                        }
                     }
             }
 
             setChildLocationObserver()
         }
+        binding.viewModel?.checkChild()
+        binding.viewModel?.needFirstStartService?.observe(requireActivity(),{
+            if (it){
+                sendCommandToService(ACTION_START_OR_RESUME_SERVICE)
+                binding.viewModel?.finishCheck()
+            }
+        })
     }
 
-    private fun sendCommandToService(action:String){
+    override fun onDestroy() {
+        super.onDestroy()
+        binding.viewModel?.clearPolygon()
+    }
+
+    private fun sendCommandToService(action: String) {
         Intent(requireContext(), TrackingChildService::class.java).also {
             it.action = action
             requireContext().startService(it)
@@ -178,22 +213,26 @@ class TrackingFragment : Fragment(R.layout.fragment_tracker) {
         }
     }
 
-    private fun setChildLocationObserver(){
-        TrackingChildService.locationChild.observe(requireActivity(), Observer {child->
+    private fun setChildLocationObserver() {
+        TrackingChildService.locationChild.observe(requireActivity(), Observer { child ->
             child?.location?.let {
                 mapboxMap?.clear()
-                mapboxMap?.addMarker(MarkerOptions().position(LatLng(it.latitude,it.longitude)).setTitle(child.name))
+                mapboxMap?.addMarker(
+                    MarkerOptions().position(LatLng(it.latitude, it.longitude)).setTitle(child.name)
+                )
             }
         })
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun enableMapMovement() {
+        isDrawing = false
         binding.mapView.setOnTouchListener(null)
     }
 
     @SuppressLint("ClickableViewAccessibility")
     private fun enableMapDrawing() {
+        isDrawing = true
         binding.mapView.setOnTouchListener(customOnTouchListener)
     }
 }

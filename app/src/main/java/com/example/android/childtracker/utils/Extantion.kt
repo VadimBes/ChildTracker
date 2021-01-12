@@ -1,5 +1,9 @@
 package com.example.android.childtracker.utils
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import com.google.firebase.firestore.GeoPoint
 import com.mapbox.geojson.Point
 
@@ -19,5 +23,22 @@ object Extension {
             list.add(Point.fromLngLat(it.longitude,it.longitude))
         }
         return list
+    }
+
+    fun String.toShortUID():String{
+        return this.substring(0..8)
+    }
+
+    fun Drawable.toBitmap(): Bitmap {
+        if (this is BitmapDrawable) {
+            return this.bitmap
+        }
+
+        val bitmap = Bitmap.createBitmap(this.intrinsicWidth, this.intrinsicHeight, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        this.setBounds(0, 0, canvas.width, canvas.height)
+        this.draw(canvas)
+
+        return bitmap
     }
 }

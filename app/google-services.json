@@ -1,34 +1,33 @@
 {
   "project_info": {
-    "project_number": "1058317621104",
-    "firebase_url": "https://childtracker-d5e69.firebaseio.com",
-    "project_id": "childtracker-d5e69",
-    "storage_bucket": "childtracker-d5e69.appspot.com"
+    "project_number": "86810454239",
+    "project_id": "childtracking-69656",
+    "storage_bucket": "childtracking-69656.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1058317621104:android:b7aee6adc4244054dda1b5",
+        "mobilesdk_app_id": "1:86810454239:android:d94216daaa94cc1b75e16a",
         "android_client_info": {
           "package_name": "com.example.android.childtracker"
         }
       },
       "oauth_client": [
         {
-          "client_id": "1058317621104-el7e4v95kni5cvhsctsdih165el1s201.apps.googleusercontent.com",
+          "client_id": "86810454239-421kt78dqd0qsqas9f5eqao0h6bob0q4.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyC4umxNBtiSRYQX3KoDOoU9HHez4lwvYEE"
+          "current_key": "AIzaSyBrdYiIm2Nmn2H31aWRcu4fLbZW2itBU_8"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "1058317621104-el7e4v95kni5cvhsctsdih165el1s201.apps.googleusercontent.com",
+              "client_id": "86810454239-421kt78dqd0qsqas9f5eqao0h6bob0q4.apps.googleusercontent.com",
               "client_type": 3
             }
           ]

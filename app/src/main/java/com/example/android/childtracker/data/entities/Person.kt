@@ -1,5 +1,5 @@
 package com.example.android.childtracker.data.entities
 
 data class Person(
-    val isChild: Boolean
+    val isChild: Boolean = false
 )
